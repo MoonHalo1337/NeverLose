@@ -1,6 +1,6 @@
 ---@code by sirin1337 - https://github.com/sirin1337, No resell / piracy
 ---@source - https://github.com/sirin1337/NeverLose/edit/main/epic%20aimbot%20logging%20(neverlose)
----@update 22/5/9, fixed dev_print bug
+---@update 22/5/9, fixed dev_print bug, fixed registercallback bug, change target name to string lower
 
 local shot_high_priority, cmd_tick, GlobalVars_tickcount = 'false', false, GlobalVars.tickcount
 
@@ -132,8 +132,9 @@ local function on_shot(shot)
 
    local entity = EntityList.GetClientEntity(shot.index)
    local player = entity:GetPlayer()
+   local target_name = player:GetName()
 
-     client_color_log(147, 112, 219, "[Get good, get neverlose] 尝试射击 " .. player:GetName(),
+     client_color_log(147, 112, 219, "[Get good, get neverlose] 尝试射击 " .. string.lower(target_name),
 ", 目标: " .. hitgroups[shot.hitgroup],
 "  伤害: " .. tostring(shot.damage),
 "  命中概率: " .. tostring(shot.hitchance),
@@ -150,6 +151,7 @@ local printHitInfo = function(shot)
 
    local entity = EntityList.GetClientEntity(shot.target_index)
    local player = entity:GetPlayer()
+   local target_name = player:GetName()
    local reason = shot.reason
  
 	if(shot.reason == 1) then
@@ -165,7 +167,7 @@ local printHitInfo = function(shot)
 		reason = "prediction error"
 	end
 
-    client_color_log(255, 253, 166, "[Get good, get neverlose] 正常操作了 " .. player:GetName() .. ", 目标: " .. hitgroups[shot.wanted_hitgroup] .. "  原因: " .. reason .. "" .. "\n")
+    client_color_log(255, 253, 166, "[Get good, get neverlose] 正常操作了 " .. string.lower(target_name) .. ", 目标: " .. hitgroups[shot.wanted_hitgroup] .. "  原因: " .. reason .. "" .. "\n")
 
 end
 
@@ -186,7 +188,7 @@ Cheat.RegisterCallback("events", function(event)
 
         if attacker == localplayer and target ~= localplayer then
 
-   local message = "[Get good, get neverlose] 命中 " .. target_name .. ", 部位: " .. hitbox .. "  伤害: " .. dmghealth .. "  剩余hp: " .. healthremain
+   local message = "[Get good, get neverlose] 命中 " .. string.lower(target_name) .. ", 部位: " .. hitbox .. "  伤害: " .. dmghealth .. "  剩余hp: " .. healthremain
 
    if event:GetInt("health") <= 0 then 
 message = message .. " (死亡)" end
@@ -194,19 +196,13 @@ message = message .. " (死亡)" end
     client_color_log(100, 149, 237, message .. "" .. "\n")
   
        end
-   end
-end)
 
---@回合开始后再次设置cvar
-
-Cheat.RegisterCallback("events", function(event)
-
-    if event:GetName() == "round_start" then
+    elseif event:GetName() == "round_start" then
 
 local dev_val = dev:get_int()
 local devel_val = developer:get_int()
 dev:set_int(1)
 developer:set_int(1)
 
-end
+   end
 end)
