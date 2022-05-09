@@ -1,3 +1,7 @@
+---@code by sirin1337, No resale/piracy
+---@source - https://github.com/sirin1337
+---@update 22/5/9, fixed dev_print bug
+
 local shot_high_priority, cmd_tick, GlobalVars_tickcount = 'false', false, GlobalVars.tickcount
 
 local ffi = require("ffi")
@@ -90,10 +94,10 @@ local c_print = cvar.con_trace
 cl_fullupdate:invoke_callback()
 
 -- Toggle cvar
-local oldval = developer:get_int()
-developer:set_int(bxor(oldval, 1))
-dev:set_int(bxor(oldval, 1))
-c_print:set_int(bxor(oldval, 1))
+local dev_val = dev:get_int()
+local devel_val = developer:get_int()
+dev:set_int(1)
+developer:set_int(1)
 
 
 local snd_setmixer = cvar.snd_setmixer
@@ -189,21 +193,20 @@ message = message .. " (死亡)" end
 
     client_color_log(100, 149, 237, message .. "" .. "\n")
   
-  end
+       end
+   end
+end)
 
 --@回合开始后再次设置cvar
 
-    elseif event:GetName() == "round_start" then
+Cheat.RegisterCallback("events", function(event)
 
-local developer = cvar.developer
-local dev= cvar.sv_max_allowed_developer
+    if event:GetName() == "round_start" then
 
-local oldval = developer:get_int()
-developer:set_int(bxor(oldval, 1))
-dev:set_int(bxor(oldval, 1))
+local dev_val = dev:get_int()
+local devel_val = developer:get_int()
+dev:set_int(1)
+developer:set_int(1)
 
-local snd_setmixer = cvar.snd_setmixer
-
-else return end
-
+end
 end)
