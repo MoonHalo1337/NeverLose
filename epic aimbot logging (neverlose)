@@ -1,0 +1,209 @@
+local shot_high_priority, cmd_tick, GlobalVars_tickcount = 'false', false, GlobalVars.tickcount
+
+local ffi = require("ffi")
+
+ffi.cdef[[
+    void* GetProcAddress(void* hModule, const char* lpProcName);
+    void* GetModuleHandleA(const char* lpModuleName);
+    
+    typedef struct {
+        uint8_t r;
+        uint8_t g;
+        uint8_t b;
+        uint8_t a;
+    } color_struct_t;
+
+    typedef void (*console_color_print)(const color_struct_t&, const char*, ...);
+
+    typedef void* (__thiscall* get_client_entity_t)(void*, int);
+]]
+
+local FindElement = ffi.cast("unsigned long(__thiscall*)(void*, const char*)", Utils.PatternScan("client.dll", "55 8B EC 53 8B 5D 08 56 57 8B F9 33 F6 39 77 28"))
+local CHudChat = FindElement(ffi.cast("unsigned long**", ffi.cast("uintptr_t", Utils.PatternScan("client.dll", "B9 ? ? ? ? E8 ? ? ? ? 8B 5D 08")) + 1)[0], "CHudChat")
+local FFI_ChatPrint = ffi.cast("void(__cdecl*)(int, int, int, const char*, ...)", ffi.cast("void***", CHudChat)[0][27])
+
+---@ Color printing function
+
+local color_print_fn = ffi.cast("console_color_print", ffi.C.GetProcAddress(ffi.C.GetModuleHandleA("tier0.dll"), "?ConColorMsg@@YAXABVColor@@PBDZZ"))
+
+function client_color_log(r, g, b, msg, ...)
+    for k, v in pairs({...}) do
+        msg = tostring(msg .. v)
+    end
+    local clr = ffi.new("color_struct_t")
+    clr.r, clr.g, clr.b, clr.a = r, g, b, 255
+    color_print_fn(clr, msg)
+end
+
+
+---@控制台输出限制 & 限制输出包含特定字符的
+---@控制台输出限制 & 只输出包含特定字符的
+---@启用控制台输出限制 & "1" 为 使过滤日志变暗 "2" 为 完全过滤其它日志
+---@设置dev_print 1
+---@允许服务器设置dev_print 1
+
+EngineClient.ExecuteClientCmd('con_filter_text_out "："')
+EngineClient.ExecuteClientCmd('con_filter_text ""')
+EngineClient.ExecuteClientCmd('con_filter_enable 1')
+EngineClient.ExecuteClientCmd('developer 1')
+EngineClient.ExecuteClientCmd('sv_max_allowed_developer 1')
+
+---@订阅库cvar
+
+local cvar = require("nl.cvar")
+local sf = require("nl.sf")
+local bxor = bit.bxor
+local cl_fullupdate = cvar.cl_fullupdate
+
+---@如果未找到nl.cvar则打印订阅链接
+
+if not cl_fullupdate then 
+
+client_color_log(182,231,23, "[error]")
+client_color_log(255, 35, 35, '未找到订阅库 "nl.cvar"\n')
+
+
+client_color_log(182,231,23, "[error]", error_col2)
+client_color_log(255, 35, 35, '请订阅 en.neverlose.cc/market/item?id=pFGTeo\n')
+
+end
+
+---@如果未找到nl.sf则打印订阅链接
+
+if sf ~= true then
+
+client_color_log(182,231,23, "[error]")
+client_color_log(255, 35, 35, '未找到订阅库 "nl.sf"\n')
+
+
+client_color_log(182,231,23, "[error]", error_col2)
+client_color_log(255, 35, 35, '请订阅 en.neverlose.cc/market/item?id=1r69Yx\n')
+
+end
+
+---@强制设置cvar
+
+local developer = cvar.developer
+local dev= cvar.sv_max_allowed_developer
+local c_print = cvar.con_trace
+
+cl_fullupdate:invoke_callback()
+
+-- Toggle cvar
+local oldval = developer:get_int()
+developer:set_int(bxor(oldval, 1))
+dev:set_int(bxor(oldval, 1))
+c_print:set_int(bxor(oldval, 1))
+
+
+local snd_setmixer = cvar.snd_setmixer
+
+
+---@命中部位名称
+
+local hitgroups = {
+	[0] = "body",
+	[1] = "head",
+	[2] = "chest",
+	[3] = "stomach",
+	[4] = "left arm",
+	[5] = "right arm", 
+	[6] = "left leg",
+	[7] = "right leg", 
+	[8] = "neck", 
+	[10] = "body"
+}
+
+---@计算tick
+
+Cheat.RegisterCallback("createmove", function(cmd)
+
+cmd_tick = math.floor(cmd.tick_count * (ClientState.m_choked_commands - ClientState.m_choked_commands))
+
+end)
+
+---@ragebot_shot
+
+local function on_shot(shot)
+
+   local entity = EntityList.GetClientEntity(shot.index)
+   local player = entity:GetPlayer()
+
+     client_color_log(147, 112, 219, "[Get good, get neverlose] 尝试射击 " .. player:GetName(),
+", 目标: " .. hitgroups[shot.hitgroup],
+"  伤害: " .. tostring(shot.damage),
+"  命中概率: " .. tostring(shot.hitchance),
+"  bt: " ..  tostring(shot.backtrack) .. " (" .. cmd_tick .. " tks)",
+"  hp: " .. shot_high_priority .. "" .. "\n")
+end
+
+Cheat.RegisterCallback("ragebot_shot", on_shot)
+
+
+local printHitInfo = function(shot)
+
+   if shot.reason == 0 then return end
+
+   local entity = EntityList.GetClientEntity(shot.target_index)
+   local player = entity:GetPlayer()
+   local reason = shot.reason
+ 
+	if(shot.reason == 1) then
+		reason = "解析"
+
+	elseif(shot.reason == 2) then
+		reason = "spread"
+
+	elseif(shot.reason == 3) then
+		reason = "spread"
+
+	elseif(shot.reason == 4) then
+		reason = "prediction error"
+	end
+
+    client_color_log(255, 253, 166, "[Get good, get neverlose] 正常操作了 " .. player:GetName() .. ", 目标: " .. hitgroups[shot.wanted_hitgroup] .. "  原因: " .. reason .. "" .. "\n")
+
+end
+
+Cheat.RegisterCallback("registered_shot", printHitInfo)
+
+
+Cheat.RegisterCallback("events", function(event)
+
+    if event:GetName() == "player_hurt" then
+
+        local localplayer = EntityList.GetLocalPlayer()
+        local target = EntityList.GetPlayerForUserID(event:GetInt("userid"))
+        local attacker = EntityList.GetPlayerForUserID(event:GetInt("attacker"))
+        local target_name = target:GetName()
+        local dmghealth = event:GetInt("dmg_health")
+        local healthremain = event:GetInt("health")
+        local hitbox = hitgroups[event:GetInt("hitgroup")]
+
+        if attacker == localplayer and target ~= localplayer then
+
+   local message = "[Get good, get neverlose] 命中 " .. target_name .. ", 部位: " .. hitbox .. "  伤害: " .. dmghealth .. "  剩余hp: " .. healthremain
+
+   if event:GetInt("health") <= 0 then 
+message = message .. " (死亡)" end
+
+    client_color_log(100, 149, 237, message .. "" .. "\n")
+  
+  end
+
+--@回合开始后再次设置cvar
+
+    elseif event:GetName() == "round_start" then
+
+local developer = cvar.developer
+local dev= cvar.sv_max_allowed_developer
+
+local oldval = developer:get_int()
+developer:set_int(bxor(oldval, 1))
+dev:set_int(bxor(oldval, 1))
+
+local snd_setmixer = cvar.snd_setmixer
+
+else return end
+
+end)
