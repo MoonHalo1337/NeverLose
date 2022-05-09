@@ -1,5 +1,5 @@
----@code by sirin1337, No resale/piracy
----@source - https://github.com/sirin1337
+---@code by sirin1337 - https://github.com/sirin1337, No resale/piracy
+---@source - https://github.com/sirin1337/NeverLose/edit/main/epic%20aimbot%20logging%20(neverlose)
 ---@update 22/5/9, fixed dev_print bug
 
 local shot_high_priority, cmd_tick, GlobalVars_tickcount = 'false', false, GlobalVars.tickcount
