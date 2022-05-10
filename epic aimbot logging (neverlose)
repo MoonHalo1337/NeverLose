@@ -53,6 +53,8 @@ EngineClient.ExecuteClientCmd('developer 1')
 EngineClient.ExecuteClientCmd('sv_max_allowed_developer 1')
 
 ---@订阅库cvar
+---@found cvar
+
 
 local cvar = require("nl.cvar")
 local sf = require("nl.sf")
@@ -60,8 +62,12 @@ local bxor = bit.bxor
 local cl_fullupdate = cvar.cl_fullupdate
 
 ---@如果未找到nl.cvar则打印订阅链接
+---@if not found nl.cvar then print subscribe link
 
 if not cl_fullupdate then 
+
+---@not found library 'nl.cvar'
+---@pls subscribe en.neverlose.cc/market/item?id=pFGTeo
 
 client_color_log(182,231,23, "[error]")
 client_color_log(255, 35, 35, '未找到订阅库 "nl.cvar"\n')
@@ -73,8 +79,12 @@ client_color_log(255, 35, 35, '请订阅 en.neverlose.cc/market/item?id=pFGTeo�
 end
 
 ---@如果未找到nl.sf则打印订阅链接
+---@if not found nl.sf then print subscribe link
 
 if sf ~= true then
+
+---@not found library 'nl.sf'
+---@pls subscribe en.neverlose.cc/market/item?id=1r69Yx
 
 client_color_log(182,231,23, "[error]")
 client_color_log(255, 35, 35, '未找到订阅库 "nl.sf"\n')
@@ -86,6 +96,8 @@ client_color_log(255, 35, 35, '请订阅 en.neverlose.cc/market/item?id=1r69Yx�
 end
 
 ---@强制设置cvar
+---@cvar set
+
 
 local developer = cvar.developer
 local dev= cvar.sv_max_allowed_developer
@@ -196,6 +208,8 @@ message = message .. " (死亡)" end
     client_color_log(100, 149, 237, message .. "" .. "\n")
   
        end
+       
+---@cvar set if round start
 
     elseif event:GetName() == "round_start" then
 
