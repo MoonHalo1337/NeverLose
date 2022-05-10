@@ -146,10 +146,10 @@ local function on_shot(shot)
    local player = entity:GetPlayer()
    local target_name = player:GetName()
 
-     client_color_log(147, 112, 219, "[Get good, get neverlose] 尝试射击 " .. string.lower(target_name),
-", 目标: " .. hitgroups[shot.hitgroup],
-"  伤害: " .. tostring(shot.damage),
-"  命中概率: " .. tostring(shot.hitchance),
+     client_color_log(147, 112, 219, "[Get good, get neverlose] 尝试射击 " .. string.lower(target_name),  ---@ 'yeeted', target_name
+", 目标: " .. hitgroups[shot.hitgroup],                   ---@ 'hitbox', shot_hitbox
+"  伤害: " .. tostring(shot.damage),                      ---@ 'dmg', shot_damage
+"  命中概率: " .. tostring(shot.hitchance),               ---@ 'hc', shot_hitchance
 "  bt: " ..  tostring(shot.backtrack) .. " (" .. cmd_tick .. " tks)",
 "  hp: " .. shot_high_priority .. "" .. "\n")
 end
@@ -165,6 +165,11 @@ local printHitInfo = function(shot)
    local player = entity:GetPlayer()
    local target_name = player:GetName()
    local reason = shot.reason
+   
+---@ 'resolver?', reason.1
+---@ 'spread', reason.2
+---@ 'spread (occlusion)', reason.3
+---@ 'prediction error', reason.4
  
 	if(shot.reason == 1) then
 		reason = "解析"
@@ -178,6 +183,8 @@ local printHitInfo = function(shot)
 	elseif(shot.reason == 4) then
 		reason = "prediction error"
 	end
+	
+---@ 'miss', target_name, 'hitbox', shot_hitbox, 'reason', shot_reason
 
     client_color_log(255, 253, 166, "[Get good, get neverlose] 正常操作了 " .. string.lower(target_name) .. ", 目标: " .. hitgroups[shot.wanted_hitgroup] .. "  原因: " .. reason .. "" .. "\n")
 
@@ -197,12 +204,17 @@ Cheat.RegisterCallback("events", function(event)
         local dmghealth = event:GetInt("dmg_health")
         local healthremain = event:GetInt("health")
         local hitbox = hitgroups[event:GetInt("hitgroup")]
+	
+---@ 'hit', target_name, 'hitbox', hitbox, 'dmg', damage, 'rhp', health
 
         if attacker == localplayer and target ~= localplayer then
 
    local message = "[Get good, get neverlose] 命中 " .. string.lower(target_name) .. ", 部位: " .. hitbox .. "  伤害: " .. dmghealth .. "  剩余hp: " .. healthremain
 
+---@ if target dead
+
    if event:GetInt("health") <= 0 then 
+---@ " (死亡)" = " (dead)"
 message = message .. " (死亡)" end
 
     client_color_log(100, 149, 237, message .. "" .. "\n")
