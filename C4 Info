@@ -1,0 +1,174 @@
+--require library
+local images = require('neverlose/images')
+local bomb = require('neverlose/bomb')
+local icon = images.get_weapon_icon('c4')
+--local variables for API functions. any changes to the line below will be lost on re-generation
+local sub = string.sub
+local floor = math.floor
+local format = string.format
+local vec = vector
+local death = pairs
+--function
+local printf = function(...)
+    return printf and printf(...) or print(format(...))
+end
+
+local unpack = function(v)
+    if type(v) == 'userdata' then
+
+        if v.r then
+            return v.r, v.g, v.b, v.a
+        end
+
+        if v.x then
+            return v.x, v.y, v.z
+        end
+
+    elseif type(v) == 'table' then
+
+        return unpack(v)
+
+    else
+
+        error(format('%s: %s', 'cant unpack', type(v)))
+
+    end
+end
+
+local dpi = {
+    '75%', 
+    '100%', 
+    '125%', 
+    '150%', 
+    '175%', 
+    '200%', 
+}
+
+local dpi_to_number = {
+    ['75%'] = 0.75, 
+    ['100%'] = 1, 
+    ['125%'] = 1.25, 
+    ['150%'] = 1.5, 
+    ['175%'] = 1.75, 
+    ['200%'] = 2, 
+}
+
+--ui
+local group = ui.create('Main')
+local master_switch = group:switch('Master switch', false)
+local master_color = group:color_picker('Master Color', color(255, 255, 145, 255))
+local master_dpi = group:combo('Dpi scale', dpi)
+
+--vars
+local screen_x, screen_y = unpack(render.screen_size())
+local alpha = {plant = 0, bomb = 0}
+
+local size = 15
+local width = 120
+
+local dpi = dpi_to_number[master_dpi:get()]
+local font = render.load_font('Verdana', 13 * dpi, 'ad')
+
+master_dpi:set_callback(function()
+    dpi = dpi_to_number[master_dpi:get()]
+    font = render.load_font('Verdana', 13 * dpi, 'ad')
+end)
+
+local rect = function(def_w, x, y, w, h, r, g, b, a)
+    render.rect(vec(x - 1, y - 1), vec(x + def_w + 1, y + h + 1), color(0, 0, 0, a))
+    render.rect(vec(x, y), vec(x + w, y + h), color(r, g, b, a))
+end
+
+local draw_icon = function(x, y, r, g, b, a)
+    icon:draw(x + 1, y + 1, nil, nil, 255, 200, 120, a)
+    icon:draw(x, y, nil, nil, r, g, b, a)
+end
+
+local draw_bar = function(def_w, x, y, w, h, r, g, b, a, text, ...)
+    rect(def_w * dpi, x, y, w * dpi, h * dpi, r, g, b, a)
+    render.text(font, vec(x + 120/2, y + 5*2 + 7 * dpi), color(r, g, b, a), 'c', text)
+    render.text(font, vec(x + 120/2, y - 5*2 * dpi), color(r, g, b, a), 'c', format(...))
+end
+
+local plant = function()
+    if not entity.get_local_player() then
+        return
+    end
+
+    if not master_switch:get() or bomb.state ~= false or bomb.plant_time == 0 then 
+        alpha.plant = alpha.plant > 1 and alpha.plant - 1 or alpha.plant
+    else
+        alpha.plant = alpha.plant < 255 and alpha.plant + 1 or alpha.plant
+    end
+
+    if alpha.plant <= 0 then
+        return
+    end
+
+    local r, g, b = unpack(master_color:get())
+
+    draw_icon(screen_x/2 - 80, 
+        screen_y/5, 
+        255, 255, 145, alpha.plant
+    )
+
+    draw_bar(120, 
+        screen_x/2 - 80 + size*2, 
+        screen_y/5 + size, 
+        bomb.plant_percentage*120, 
+        5, 
+        r, g, b, alpha.plant, 
+        '',
+        '%s - %d%s', bomb.site, bomb.plant_percentage*100, '%'
+    )
+end
+
+local bombdmg = function()
+    if not entity.get_local_player() then
+        return
+    end
+    
+    if not master_switch:get() or not bomb.state or not bomb.c4time or bomb.dmg == '-0 HP' or bomb.c4time < -1 then 
+        alpha.bomb = alpha.bomb > 1 and alpha.bomb - 1 or alpha.bomb
+    else
+        alpha.bomb = alpha.bomb < 255 and alpha.bomb + 1 or alpha.bomb
+    end
+
+    if alpha.bomb <= 0 then
+        return
+    end
+
+    local cant_defuse = entity.get_local_player().m_bHasDefuser and 5 or 10
+
+    local r, g, b = unpack(master_color:get())
+
+    if bomb.c4time < cant_defuse then
+        r, g, b = 235, 35, 35
+    end
+
+    draw_icon(screen_x/2 - 80, 
+        screen_y/5, 
+        255, 255, 145, alpha.bomb
+    )
+
+    draw_bar(120, 
+        screen_x/2 - 80 + size*2, 
+        screen_y/5 + size, 
+        bomb.c4time/cvar.mp_c4timer:int()*120, 
+        5, 
+        r, g, b, alpha.bomb, 
+        bomb.dmg == 'FATAL' and format('\aEB2323FF%s', bomb.dmg) or format('\aFFFF96FF%s', bomb.dmg),
+        '%s - %d%s', bomb.site, bomb.c4time, 's'
+    )
+end
+
+events.round_start:set(function()
+    for Alone, eternity in death(alpha) do
+        eternity = 0
+    end
+end)
+
+events.render:set(function()
+    plant()
+    bombdmg()
+end)
